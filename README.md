@@ -1,231 +1,280 @@
 # GuardianPay AI 🛡️
-> **"Detect. Warn. Protect."**  
-> *A Digital-Banking Financial Safety Layer Protecting Vulnerable Customers from Digital Fraud & Social Engineering Manipulation.*  
-> **Built for Innovation Unbound Hackathon @ VIT Chennai**
+> **"DETECT → UNDERSTAND → WARN → PROTECT"**  
+> *A Proactive Digital Banking Safety Layer for Senior Citizens and Vulnerable Customers.*  
+> **Built by Team Klyrova for VIT Hackathon**
 
 ---
 
-## 📌 Demonstration Disclaimer
+## 📌 Demonstration Sandbox Disclaimer
 > [!IMPORTANT]
-> **DEMONSTRATION PROTOTYPE SANDBOX**  
-> GuardianPay AI does **NOT** connect to real bank accounts, real UPI networks, real payment gateways, or live customer financial records. All customer personas, balances, transactions, and banking identifiers are **100% synthetic**.
+> **HACKATHON DEMO ENVIRONMENT**  
+> GuardianPay AI is a proactive safety demonstration sandbox. All customer accounts, transactions, balances, and UPI handles are synthetic records securely stored in local SQLite (`guardianpay.sqlite`). No real bank credentials or UPI pins are compromised or accessed.
 
 ---
 
-## 🌟 1. Core Problem & Product Philosophy
+## 🎯 1. Problem Statement & Core Solution
 
-### The Real Banking Problem:
-Digital banking adoption is accelerating rapidly, but **senior citizens, first-time digital banking users, and digitally inexperienced individuals** remain disproportionately vulnerable to social engineering scams:
-- Fake bank KYC expiration threats via SMS.
-- Electricity bill disconnection panic calls.
-- Deceptive callers directing victims to download remote screen-sharing tools (*AnyDesk / TeamViewer*).
-- Coercive pressure forcing customers to authorize transfers to fraudulent beneficiary accounts.
+### The Problem
+Digital banking adoption has grown explosively, but **senior citizens, first-time digital banking users, and digitally inexperienced individuals** remain disproportionately vulnerable to social engineering scams:
+- **Fake Electricity Disconnection Panic:** Threats that power will be cut off within hours unless a quick payment is made.
+- **Deceptive Bank KYC Updates:** Fraudulent APK downloads and phishing portals requesting card credentials.
+- **Active Phone Call Coercion:** Fraudsters keep victims on an active phone call, dictating steps to authorize UPI transfers to unknown accounts.
 
-### The Paradigm Shift:
+### The Paradigm Shift
 ```
-Traditional Fraud Systems    ───►  "Is this transaction credential fake or stolen?"
-GuardianPay AI Prevention    ───►  "Is the legitimate customer being manipulated into making this payment?"
+Traditional Fraud Detection:  "Was the password or authentication token stolen?"
+GuardianPay AI Prevention:    "Is the legitimate customer being manipulated or coerced into sending this money?"
 ```
-
-Traditional fraud detection tools only evaluate if credentials or tokens were stolen. When a panic-stricken customer is coerced into sending money willingly, traditional tools fail.
-
-**GuardianPay AI intervenes BEFORE money leaves the account.** It calculates multi-factor behavioral risk, displays transparent reasons, and executes the signature **Manipulation Check**:
-> **"Did someone ask you to make this payment urgently?"**
-> - 🛑 **"YES"** ➔ **HOLD & VERIFY** (Payment paused safely, funds remain in the account, clear guidance provided).
-> - ⚡ **"NO"** ➔ Verification completed and payment processed.
-> - ❓ **"I'M NOT SURE"** ➔ Payment paused safely for independent verification.
+Traditional systems fail when a panic-stricken customer willingly authorizes the payment. GuardianPay AI intervenes **BEFORE** money leaves the account.
 
 ---
 
 ## 🏗️ 2. System Architecture
 
-```mermaid
-graph TD
-    subgraph UI ["Frontend (React 18 + Tailwind CSS + Lucide)"]
-        Nav["Brand Header & View Switcher (Customer Safety View | Bank Operations | Demo Scenarios)"]
-        CustomerPortal["Customer Safety Experience (Home, Payments, Transactions, Scam Analyzer, Safety Center)"]
-        BankPortal["Bank Safety Operations Console (KPIs, Alert Table, Forensic Telemetry Inspector)"]
-        DemoHub["1-Click Demonstration Center (Senior ₹80k Coercion Demo & Phishing SMS Demo)"]
-    end
-
-    subgraph Backend ["Backend API (Python FastAPI)"]
-        API["FastAPI REST Endpoints (/analyze-payment, /analyze-message, /intervention, /dashboard/*)"]
-        RiskEngine["Explainable Dynamic Risk Engine (Weighted Telemetry Breakdown)"]
-        ScamService["Scam Analyzer (Deterministic Heuristics + Google Gemini AI Fallback)"]
-        InterventionService["Adaptive Intervention Service (Human-Centered Holds & Guidance)"]
-        DB[(SQLite Database via SQLAlchemy)]
-    end
-
-    UI -->|REST / JSON| API
-    API --> RiskEngine
-    API --> ScamService
-    API --> InterventionService
-    API --> DB
+```
+┌────────────────────────────────────────────────────────┐
+│               Frontend: React + Tailwind               │
+│   (Customer Safety Portal, Bank Ops, Demo Center)      │
+└──────────────────────────┬─────────────────────────────┘
+                           │ REST / JSON (Vite Proxy / Vercel)
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│               Backend: Python + FastAPI                │
+│    (Uvicorn, Pydantic, SQLAlchemy with Foreign Keys)   │
+└──────────────┬───────────────────────────┬─────────────┘
+               │                           │
+               ▼                           ▼
+┌─────────────────────────────┐ ┌────────────────────────┐
+│      AI / ML Pipeline       │ │  Scam Message Analyzer │
+│ • Explainable Risk Engine   │ │ • Gemini 2.5 Flash     │
+│ • Vulnerability Adjustments │ │ • Deterministic NLP    │
+│ • Scikit-learn (IsoForest)  │ │   Fallback Engine      │
+│ • Pandas Telemetry Vectors  │ └────────────────────────┘
+└──────────────┬──────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────────────────┐
+│                 Database: SQLite                       │
+│  (Users, Beneficiaries, Transactions, Alerts, Safety)  │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📁 3. Folder Structure
+## 💻 3. Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 18, Tailwind CSS, Lucide React, Chart.js | Modern accessible UI, high contrast typography, senior-friendly layouts |
+| **Backend** | Python 3.10+, FastAPI, Uvicorn, Pydantic v2 | High-throughput async REST API with rigorous input validation |
+| **Database** | SQLite via SQLAlchemy 2.0 | Durable local database with `PRAGMA foreign_keys=ON` |
+| **AI / ML** | Scikit-learn, Pandas | Behavioral telemetry feature extraction & unsupervised anomaly detection |
+| **Scam Analyzer** | Google Gemini API (`@google/genai`) | Natural language phishing and coercive intent detection with heuristic fallback |
+| **Deployment** | Vercel (Frontend), Render (Backend) | Production-ready multi-cloud architecture |
+
+---
+
+## 📁 4. Project Structure
 
 ```
-GuardianPay AI/
+guardianpay-ai/
 ├── backend/
 │   ├── app/
-│   │   ├── api/
-│   │   │   ├── customers.py        # Customer profile & baseline querying
-│   │   │   ├── transactions.py     # Payment analysis & transaction creation
-│   │   │   ├── scam.py             # Scam message & phishing analyzer
-│   │   │   ├── dashboard.py        # Bank monitoring stats & alert queue
-│   │   │   ├── intervention.py     # Adaptive questionnaire response handler
-│   │   │   └── demo.py             # 1-Click hackathon demo scenario presets
+│   │   ├── api/routes/
+│   │   │   ├── customers.py        # Customer profile directory & personas
+│   │   │   ├── transactions.py     # Payment analysis, confirmation, resolution
+│   │   │   ├── scams.py            # Gemini scam SMS/WhatsApp analyzer
+│   │   │   ├── alerts.py           # Bank security alerts queue
+│   │   │   ├── safety.py           # Senior protection settings & emergency pause
+│   │   │   ├── dashboard.py        # Bank operations KPI feeds
+│   │   │   └── admin.py            # Diagnostic & administrative endpoints
+│   │   ├── ai/
+│   │   │   └── gemini_scam_service.py # Gemini integration + heuristic fallback
+│   │   ├── core/
+│   │   │   └── config.py           # Pydantic environment configuration
 │   │   ├── database/
-│   │   │   ├── database.py         # SQLAlchemy engine & session maker
-│   │   │   ├── models.py           # Customer, Beneficiary, Transaction, RiskResult, ScamAnalysis models
-│   │   │   └── seed.py             # Realistic synthetic data seeder
-│   │   ├── schemas/                # Pydantic validation schemas
-│   │   │   ├── customer.py
-│   │   │   ├── transaction.py
-│   │   │   ├── scam.py
-│   │   │   ├── dashboard.py
-│   │   │   └── intervention.py
+│   │   │   ├── database.py         # SQLAlchemy engine with SQLite foreign keys
+│   │   │   ├── models.py           # Relational models (User, Beneficiary, etc.)
+│   │   │   └── seed.py             # 3 realistic demo personas with audit history
+│   │   ├── risk/
+│   │   │   ├── risk_engine.py      # Explainable multi-factor scoring engine
+│   │   │   └── ml_risk_pipeline.py # Scikit-learn IsolationForest anomaly model
 │   │   ├── services/
-│   │   │   ├── risk_engine.py      # Dynamic 0-100 explainable scoring engine
-│   │   │   ├── scam_analyzer.py    # Deterministic phishing pattern detector
-│   │   │   ├── gemini_service.py   # Google Gemini AI contextual analysis + local fallback
-│   │   │   └── intervention_service.py # Adaptive hold & guidance processor
-│   │   ├── utils/
-│   │   │   └── helpers.py          # Currency & time formatting utilities
-│   │   ├── config.py               # Settings & risk weights configuration
-│   │   └── main.py                 # FastAPI application root & CORS setup
+│   │   │   └── transaction_service.py # Core transaction lifecycle & protective hold
+│   │   └── main.py                 # FastAPI app entry point & lifespan
 │   ├── requirements.txt            # Python dependencies
-│   ├── test_backend.py             # Automated test suite
-│   ├── .env.example                # Environment variables template
-│   └── .env                        # Local configuration
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/
-│   │   │   │   └── Header.jsx              # Navbar, Sandbox banner, Persona selector
-│   │   │   ├── customer/
-│   │   │   │   ├── CustomerNavigation.jsx  # Customer tab navigation
-│   │   │   │   ├── CustomerDashboard.jsx   # Balance, Safety status, Recent activity
-│   │   │   │   ├── SendMoney.jsx           # Clean payment form + telemetry simulator
-│   │   │   │   ├── PaymentAnalysisModal.jsx# Payment Safety Check & Manipulation Check
-│   │   │   │   ├── ScamAnalyzer.jsx        # Structured Security Assessment Report
-│   │   │   │   ├── TransactionsView.jsx    # Transaction audit history
-│   │   │   │   ├── BeneficiariesView.jsx   # Trusted contact directory
-│   │   │   │   └── SafetyCenterView.jsx    # Emergency pause & senior safety tips
-│   │   │   ├── bank/
-│   │   │   │   ├── BankDashboard.jsx       # Fraud Operations Console (KPIs, Alert Table)
-│   │   │   │   └── AlertDetailModal.jsx    # Forensic telemetry review & decision controls
-│   │   │   └── demo/
-│   │   │       └── DemoScenariosView.jsx   # 1-Click Guided Showcase for judges
-│   │   ├── context/
-│   │   │   └── AppContext.jsx              # Global React state management
-│   │   ├── services/
-│   │   │   └── api.js                      # REST client for backend communication
-│   │   ├── App.jsx                         # Main application layout
-│   │   ├── main.jsx                        # React root entry
-│   │   └── index.css                       # Clean enterprise fintech styling
-│   ├── package.json                        # Frontend dependencies (React, Lucide, Tailwind)
-│   ├── vite.config.js                      # Vite configuration
-│   └── tailwind.config.js                  # Enterprise color palette
-├── run_backend.bat                         # 1-Click Windows backend launcher
-├── run_frontend.bat                        # 1-Click Windows frontend launcher
-└── README.md                               # Project documentation
+│   └── test_backend.py             # Comprehensive 8-point automated test suite
+├── src/                            # React.js Frontend
+│   ├── components/
+│   │   ├── customer/               # Customer Safety Portal (SendMoney, ScamAnalyzer)
+│   │   ├── bank/                   # Bank Safety Operations Console
+│   │   ├── demo/                   # 1-Click Hackathon Demo Scenarios
+│   │   └── common/                 # Header, Navigation, Sandbox Banner
+│   ├── services/api.ts             # Typed REST API service with environment base URL
+│   ├── context/AppContext.tsx       # Global application state management
+│   ├── App.tsx                     # Main application layout & view switcher
+│   └── main.tsx                    # React DOM root entry
+├── guardianpay.sqlite               # Seeded SQLite database
+├── server.ts                       # Node.js dev proxy server (for preview)
+├── vercel.json                     # Vercel deployment configuration
+├── render.yaml                     # Render deployment configuration
+├── .env.example                    # Documented environment variables
+└── README.md                       # Complete documentation & demo script
 ```
 
 ---
 
-## 🧮 4. Explainable Risk Engine Formula
+## 👥 5. Demo Personas & Protection Profiles
 
-$$\text{Risk Score} = \min(100, \sum \text{Triggered Factors})$$
+GuardianPay AI tailors its sensitivity according to the customer's digital vulnerability:
 
-| Telemetry Factor | Max Weight | Logic / Anomaly Trigger |
+| Persona | Profile & Experience | Protection Level | Typical Limit | Behavioral Context |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ravi Kumar** | Senior Citizen (Beginner) | **Enhanced** | ₹5,000 | Disproportionately targeted by phone fraud, heightened baseline sensitivity |
+| **Sunita Patel** | First-Time Digital User (Moderate) | **Standard** | ₹10,000 | Familiar with routine payments, guided prompts for new beneficiaries |
+| **Arjun Mehta** | Digitally Proficient (Advanced) | **Standard** | ₹25,000 | Tech-savvy, standard threshold with minimal friction for frequent transfers |
+
+---
+
+## 🧮 6. Explainable Risk Engine Formula
+
+$$\text{Risk Score} = \min(100, \sum \text{Telemetry Signals}) \times \text{Vulnerability Factor}$$
+
+| Signal Category | Weight | Evaluation Logic |
 | :--- | :---: | :--- |
-| **Transaction Amount Anomaly** | **+25** | Triggered when amount is significantly higher than customer's habitual maximum (e.g. ₹80,000 vs ₹5,000 typical limit). |
-| **Beneficiary Familiarity** | **+20** | Triggered when recipient UPI ID is not in the customer's saved trusted beneficiaries list. |
-| **Device Fingerprint** | **+20** | Triggered when payment is initiated from an unrecognized hardware device or new browser session. |
-| **Temporal & Hour Analysis** | **+10** | Triggered when payment occurs outside normal active hours (e.g. 11:45 PM night transaction). |
-| **Behavioral Velocity & Haste** | **+15** | Triggered when rapid multi-step transfer pattern indicates panic or external coaching. |
-| **Threat Intelligence Link** | **+10** | Triggered when customer session is linked to recent phishing SMS or scam message analysis. |
+| **Habitual Amount Deviation** | **+25** | Transfer amount exceeds typical limit by $>1.5\times$ or $>5\times$. |
+| **Beneficiary Trust Standing**| **+20** | Recipient is unverified or completely absent from saved trusted contacts. |
+| **Hardware Fingerprint**     | **+15** | Unknown hardware, spoofed browser agent, or mismatched IP region. |
+| **Behavioral Urgency / Haste**| **+15** | Transaction completed in $<15\text{s}$ (rushed under threat) or late night ($22:00\text{--}05:00$). |
+| **Threat Intelligence Link** | **+15** | Customer recently analyzed an urgent scam message or phishing link. |
+| **Vulnerability Sensitivity** | **+15** | Enhanced protection profile active for senior/inexperienced user. |
+| **Scikit-Learn ML Model**     | **+10** | IsolationForest unsupervised anomaly detector flags outlier telemetry. |
 
-### Risk Tiers & Adaptive Actions:
-- **0 – 30 (LOW)** ➔ `ALLOW`: Standard safe execution.
-- **31 – 60 (MEDIUM)** ➔ `WARN`: Subtle cautionary prompt.
-- **61 – 80 (HIGH)** ➔ `VERIFY`: Elevated verification prompt.
-- **81 – 100 (CRITICAL)** ➔ `HOLD & VERIFY`: Triggers the signature **Manipulation Check** *"Did someone ask you to make this payment urgently?"*.
+### Decision Tiers
+- **0 – 39 (LOW / ALLOW):** Seamless execution for safe, familiar transfers.
+- **40 – 69 (MEDIUM / VERIFY):** Cautionary prompt for unverified contacts or moderate deviations.
+- **70 – 100 (HIGH & CRITICAL / HOLD):** Protective hold instituted before money leaves the account. Prompts the **Adaptive Coercion Check**.
 
 ---
 
-## 🚀 5. How to Start the Project (Exact Commands)
+## 🚀 7. How to Run Locally
 
-### Step 1: Start Backend (Port 8000)
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+
+### Step 1: Start FastAPI Backend
 ```bash
-cd backend
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# Navigate to project root
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+pip install -r backend/requirements.txt
+
+# Run the backend on port 8001
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
-- API Endpoint: `http://127.0.0.1:8000`
-- Swagger Interactive Documentation: `http://127.0.0.1:8000/docs`
+- API is live at: `http://localhost:8001`
+- Swagger Interactive Docs: `http://localhost:8001/docs`
+- Health Check: `http://localhost:8001/health`
 
-### Step 2: Start Frontend (Port 5173)
+### Step 2: Start React Frontend
 ```bash
-cd frontend
+# In a new terminal tab at project root
 npm install
 npm run dev
 ```
-- Application is live at: `http://127.0.0.1:5173`
+- Frontend is live at: `http://localhost:3000` (or Vite dev port)
 
-*(On Windows, you can also double-click [`run_backend.bat`](file:///c:/Users/steve/OneDrive/Desktop/GuardianPay%20AI/run_backend.bat) and [`run_frontend.bat`](file:///c:/Users/steve/OneDrive/Desktop/GuardianPay%20AI/run_frontend.bat).)*
-
----
-
-## 🧪 6. Automated Testing
+### Step 3: Run Automated Backend Tests
 ```bash
-cd backend
-python test_backend.py
-```
-Expected output:
-```
-[PASS] Fraud Prevention Risk Score: 100 (CRITICAL) - Action: HOLD & VERIFY
-[PASS] Scam Analysis Risk Score: 75% (HIGH) - Source: LOCAL_RULE_ENGINE
-[PASS] Intervention Hold Result: HELD - Headline: Payment Paused for Your Protection
-[PASS] Bank Dashboard Stats & Alerts loaded successfully.
-==========================================
-SUCCESS: ALL GUARDIANPAY AI TESTS PASSED!
-==========================================
+python3 backend/test_backend.py
 ```
 
 ---
 
-## 🎤 7. Demonstration Script for Hackathon Judges
+## ☁️ 8. How to Deploy to Production
 
-```
-[0:00 - 0:30] "Hello Judges, this is GuardianPay AI: Detect. Warn. Protect. 
-Built for Innovation Unbound at VIT Chennai to solve a critical issue: 
-Protecting vulnerable digital banking users—especially senior citizens—from digital financial fraud."
+### Deploying Backend to Render
+1. Connect your GitHub repository to [Render](https://render.com).
+2. Create a new **Web Service** with the following settings:
+   - **Environment:** `Python`
+   - **Build Command:** `pip install -r backend/requirements.txt`
+   - **Start Command:** `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+3. Configure Environment Variables in Render Dashboard:
+   - `GEMINI_API_KEY`: Your Google Gemini API Key
+   - `ENVIRONMENT`: `production`
+   - `CORS_ORIGINS`: `*` (or your frontend Vercel domain)
+   - `SQLITE_DB_PATH`: `/var/data/guardianpay.sqlite`
+4. Add a Persistent Disk (optional, for persistent SQLite across deploys):
+   - Mount Path: `/var/data`, Size: `1 GB`
+*(Alternatively, use the included [`render.yaml`](render.yaml) for 1-click blueprint deployment).*
 
-[0:30 - 1:00] "Traditional banking fraud systems ask: 'Is this transaction credential stolen?' 
-They fail completely when a panic-stricken senior citizen is coerced into making the payment themselves.
-GuardianPay AI makes the paradigm shift: 'Is the customer being manipulated?'"
-
-[1:00 - 2:00] "Let's demonstrate Scenario 1 with Ravi Sharma, a 68-year-old beginner user. 
-He receives a fake KYC SMS and attempts to send ₹80,000 to an unknown fraudster on a new device.
-GuardianPay's explainable risk engine scores this as 100 CRITICAL risk and pauses.
-Instead of showing scary error codes, it shows a clean Payment Safety Check and asks:
-'Did someone ask you to make this payment urgently?'
-When Ravi clicks 'YES', GuardianPay safely holds the payment BEFORE money leaves the account."
-
-[2:00 - 2:30] "In our Scam Analyzer, seniors can paste any suspicious SMS or WhatsApp forward. 
-The system formats it as a clear Security Assessment Report with identified warning signs and action advice."
-
-[2:30 - 3:00] "On the Bank Operations side, fraud analysts gain real-time visibility into held funds, 
-prevented fraud amounts (over ₹8,45,000), event timelines, and decision controls (Approve / Hold / Escalate).
-GuardianPay AI moves digital banking from reactive fraud detection to proactive fraud prevention."
-```
+### Deploying Frontend to Vercel
+1. Connect your repository to [Vercel](https://vercel.com).
+2. Framework Preset: `Vite`
+3. Set Environment Variable:
+   - `VITE_API_URL`: `https://your-render-backend-url.onrender.com`
+4. Deploy! `vercel.json` will automatically handle SPA routing rewrites.
 
 ---
 
-**GuardianPay AI** — *Detect. Warn. Protect.*  
-*Innovation Unbound @ VIT Chennai*
+## 🎤 9. Hackathon Demo Script (Step-by-Step for Judges)
+
+### Step 1: Establish Context (30 seconds)
+> *"Hello Judges, we are Team Klyrova presenting GuardianPay AI. Traditional fraud engines detect stolen credentials after the fact. But when an 72-year-old grandfather is panicked into sending ₹80,000 to an extortionist, credentials aren't stolen—he enters his own PIN. GuardianPay AI solves this by detecting manipulation BEFORE money leaves the account."*
+
+### Step 2: Routine Low-Risk Payment (Safe Path)
+1. Select **Ravi Kumar (Senior Citizen, Enhanced Protection)** from the persona selector.
+2. In the Customer Portal, click **Send Money**.
+3. Choose **Rohan Kumar (Son)**, enter **₹2,500**, Purpose: *"Monthly medicines"*.
+4. Click **Pay Now**.
+5. **Show Judges:** Risk score is **5/100 (LOW)**. The transaction is instantly approved (`ALLOW`) because the recipient is a verified family member and the amount aligns with his habitual pattern.
+
+### Step 3: Urgent Scam & High-Risk Coercion Trigger
+1. In Send Money, click **Load Demo: Electricity Extortion Scenario**.
+   - Payee: `powercut.warning@paytm`
+   - Amount: `₹80,000` (far exceeding Ravi's ₹5,000 habitual limit)
+   - Note: *"Immediate power disconnection penalty pay right now"*
+   - Telemetry: Late night (23:45), rushed pacing (10 seconds), unrecognized hardware.
+2. Click **Proceed to Payment Safety Check**.
+3. **Show Judges:** Risk score jumps to **100/100 (CRITICAL - HOLD)**. The explainable risk breakdown displays each red flag transparently.
+
+### Step 4: Adaptive Coercion Check & Protective Hold
+1. GuardianPay AI displays the human-centered prompt:
+   > **"Did someone call or message you asking to transfer this money urgently?"**
+2. Click **"YES, I am on an urgent call"**.
+3. **Show Judges:** The transaction is **SAFELY HELD**. Money does not leave Ravi's account. Ravi is provided with calm, actionable guidance: *"Hang up the call immediately. Your funds are secure."*
+
+### Step 5: Scam Message Analyzer (Gemini AI + Heuristics)
+1. Navigate to **Scam Analyzer** in the navigation bar.
+2. Paste a deceptive message or select **Load Electricity Scam SMS**:
+   > *"URGENT: Electricity Board notice. Power connection will be disconnected tonight by 9:30 PM due to unpaid bill. Call 9876543210 immediately."*
+3. Click **Analyze Message Safety**.
+4. **Show Judges:** Gemini AI breaks down the scam:
+   - **Risk Score: 95% (CRITICAL)**
+   - Identified tactics: Artificial urgency, impersonation of utility board, unofficial phone contact.
+   - Recommended action: Do not call the number; verify bills on the official DISCOM portal.
+
+### Step 6: Bank Safety Operations Console
+1. Click **Bank Operations** in the header.
+2. **Show Judges:** The fraud operations console shows:
+   - Live KPI cards: **Transactions Analyzed**, **High-Risk Holds Instituted**, **Total Funds Protected (₹8,00,000+)**.
+   - The alert queue lists Ravi's held transaction in real-time.
+   - Click the held transaction to inspect the complete forensic telemetry: device fingerprint, typing speed, and AI confidence.
+   - Demonstrate the **Bank Resolution Controls**: Operator can verify with family and click **Clear Hold** or **Block Account**.
+
+### Step 7: Vulnerability Profile Comparison
+1. Switch personas from **Ravi Kumar (Senior, Enhanced)** to **Arjun Mehta (Software Engineer, Standard)**.
+2. Enter the same ₹18,000 electronic appliance transaction for both.
+3. **Show Judges:** Ravi's transaction receives a heightened risk score (85 HOLD) triggering senior safety safeguards, while Arjun's receives a standard score (55 VERIFY), proving that GuardianPay AI provides adaptive, respectful protection tailored to digital vulnerability.
+
+---
+
+## 🏆 Summary Checklist for Hackathon Evaluation
+- ✅ **DETECT:** Real-time multi-factor explainable behavioral risk engine (0–100).
+- ✅ **UNDERSTAND:** Gemini 2.5 Flash + Heuristic NLP scam message analyzer.
+- ✅ **WARN:** Clear, non-technical safety explanations tailored for senior citizens.
+- ✅ **PROTECT:** Interactive coercion check that halts unauthorized outflows before money leaves.
+- ✅ **OBSERVABILITY:** Live bank operations console with forensic telemetry review.
+- ✅ **DEPLOYABILITY:** Ready for Render (Backend) and Vercel (Frontend).
