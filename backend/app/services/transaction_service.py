@@ -157,16 +157,30 @@ def analyze_and_record_payment(
             )
         )
 
-    # Create safety alert if high or critical
-    if eval_result.risk_level in ("CRITICAL", "HIGH"):
+    # Create safety alert if critical hold or high verification
+    if eval_result.recommended_action == "HOLD" or eval_result.risk_level == "CRITICAL":
         db.add(
             Alert(
                 id=f"ALT-TXN-{int(datetime.now().timestamp() * 1000)}",
                 user_id=user.id,
                 type="PAYMENT_HOLD",
                 title=f"Protective Hold Instituted on ₹{amount:,.0f} Transfer",
-                message=f"GuardianPay AI detected risk score of {eval_result.risk_score}% ({eval_result.risk_level}). Funds remain securely held in your account.",
-                severity=eval_result.risk_level,
+                message=f"GuardianPay AI detected critical risk score of {eval_result.risk_score}% ({eval_result.risk_level}). Funds remain securely held in your account.",
+                severity="CRITICAL",
+                related_transaction_id=txn_id,
+                read=0,
+                created_at=now_iso,
+            )
+        )
+    elif eval_result.risk_level == "HIGH":
+        db.add(
+            Alert(
+                id=f"ALT-TXN-{int(datetime.now().timestamp() * 1000)}",
+                user_id=user.id,
+                type="SECURITY_WARNING",
+                title=f"Security Verification Required for ₹{amount:,.0f} Transfer",
+                message=f"Elevated risk signals detected ({eval_result.risk_score}% score). Verification requested before completing payment to {recipient_name}.",
+                severity="HIGH",
                 related_transaction_id=txn_id,
                 read=0,
                 created_at=now_iso,
@@ -177,15 +191,20 @@ def analyze_and_record_payment(
     db.refresh(db_txn)
 
     # Generate factors for the modal
+    habitual_ratio = amount / max(1.0, user.habitual_max_amount)
     factors = [
         {
             "id": "habitual",
             "name": "Habitual Amount Deviation",
-            "score": 25 if (amount > user.habitual_max_amount * 2) else (10 if amount > user.habitual_max_amount else 0),
+            "score": 25 if (habitual_ratio > 2.0) else (15 if habitual_ratio > 1.0 else 0),
             "maxScore": 25,
             "triggered": bool(amount > user.habitual_max_amount),
-            "description": f"Transfer amount ₹{amount:,.0f} vs typical safe threshold of ₹{user.habitual_max_amount:,.0f}",
-            "severity": "CRITICAL" if amount > user.habitual_max_amount * 4 else "WARN",
+            "description": (
+                f"You normally send around ₹{user.habitual_max_amount:,.0f}, but this payment is ₹{amount:,.0f}."
+                if amount > user.habitual_max_amount
+                else f"Transfer amount ₹{amount:,.0f} aligns with typical spending (up to ₹{user.habitual_max_amount:,.0f})"
+            ),
+            "severity": "CRITICAL" if habitual_ratio > 4.0 else ("WARN" if habitual_ratio > 1.0 else "LOW"),
         },
         {
             "id": "recipient",
@@ -216,10 +235,14 @@ def analyze_and_record_payment(
         },
     ]
 
-    explanation = (
-        f"GuardianPay AI evaluated this transaction with a risk score of {eval_result.risk_score}/100 ({eval_result.risk_level}). "
-        + ("Immediate Protective Hold recommended due to coercive signals." if eval_result.risk_level in ("CRITICAL", "HIGH") else "Transaction meets baseline safety requirements.")
-    )
+    if eval_result.recommended_action == "HOLD":
+        explanation = f"Critical risk signals detected ({eval_result.risk_score}/100). Protective hold instituted to prevent unauthorized drain. Funds remain safely in your account."
+    elif eval_result.recommended_action == "VERIFY":
+        explanation = f"Elevated risk score of {eval_result.risk_score}/100 detected. Multiple factors require conscious verification before proceeding."
+    elif eval_result.recommended_action == "WARN":
+        explanation = f"This payment is higher than your usual amount. You normally send around ₹{user.habitual_max_amount:,.0f}, but this payment is ₹{amount:,.0f}. Do you want to continue?"
+    else:
+        explanation = f"Transaction meets baseline safety requirements with low risk score of {eval_result.risk_score}/100."
 
     return {
         "totalScore": eval_result.risk_score,
@@ -229,7 +252,7 @@ def analyze_and_record_payment(
         "transactionId": txn_id,
         "factors": factors,
         "explanation": explanation,
-        "requiresIntervention": eval_result.risk_level in ("CRITICAL", "HIGH"),
+        "requiresIntervention": eval_result.recommended_action in ("HOLD", "VERIFY"),
         "reasons": eval_result.reasons,
         "signals": [s.to_dict() for s in eval_result.signals],
         "protectionLevel": eval_result.protection_level,
@@ -241,9 +264,9 @@ def confirm_transaction(db: Session, transaction_id: str, confirmation_data: Dic
         raise HTTPException(status_code=404, detail=f"Transaction {transaction_id} not found.")
 
     # A HOLD decision must actually prevent the transaction from being marked completed directly
-    if txn.status == "HELD" or txn.risk_level in ("CRITICAL", "HIGH"):
-        is_verified = bool(confirmation_data.get("verifiedLegitimate") or confirmation_data.get("bankOverride"))
-        if not is_verified:
+    if txn.status == "HELD" or txn.recommended_action == "HOLD" or txn.risk_level == "CRITICAL":
+        is_override = bool(confirmation_data.get("bankOverride"))
+        if not is_override:
             txn.status = "HELD"
             db.commit()
             raise HTTPException(
@@ -257,6 +280,16 @@ def confirm_transaction(db: Session, transaction_id: str, confirmation_data: Dic
     if txn.user and txn.user.balance >= txn.amount:
         txn.user.balance -= txn.amount
 
+    db.commit()
+    db.refresh(txn)
+    return map_transaction_to_dict(txn)
+
+def cancel_transaction(db: Session, transaction_id: str) -> Dict[str, Any]:
+    txn = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if not txn:
+        raise HTTPException(status_code=404, detail=f"Transaction {transaction_id} not found.")
+
+    txn.status = "CANCELLED"
     db.commit()
     db.refresh(txn)
     return map_transaction_to_dict(txn)

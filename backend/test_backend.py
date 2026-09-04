@@ -83,24 +83,39 @@ def run_tests():
         assert d_low["status"] == "ALLOWED"
         print(f" [PASS] Low-Risk Routine Payment: Score={d_low['totalScore']}/100 -> {d_low['action']} ({d_low['tier']})")
 
-        # 3b. Scenario B: Medium-risk unfamiliar payment (VERIFY)
-        med_risk_payload = {
-            "customerId": "usr_sunita_patel",
-            "recipientName": "New Electric Vendor",
-            "recipientUpi": "vendor981@upi",
-            "amount": 8000,
-            "purpose": "Appliance repair charge",
+        # 3b. Scenario B: Unusual amount to trusted recipient (WARN - Conscious Confirmation)
+        unusual_warn_payload = {
+            "customerId": "usr_ravi_kumar",
+            "recipientName": "Rohan Kumar",
+            "recipientUpi": "rohan.k@okaxis",
+            "amount": 18000,
+            "purpose": "Festival family support",
             "isKnownDevice": True,
-            "transactionHour": 15,
+            "transactionHour": 14,
             "completionTimeSeconds": 45,
             "hasRecentScamAlert": False,
         }
-        res_med = client.post("/api/analyze-payment", json=med_risk_payload)
-        assert res_med.status_code == 200
-        d_med = res_med.json()
-        assert d_med["tier"] == "VERIFY"
-        assert d_med["action"] == "VERIFY"
-        print(f" [PASS] Medium-Risk Unfamiliar Payment: Score={d_med['totalScore']}/100 -> {d_med['action']} ({d_med['tier']})")
+        res_warn = client.post("/api/analyze-payment", json=unusual_warn_payload)
+        assert res_warn.status_code == 200
+        d_warn = res_warn.json()
+        assert d_warn["action"] == "WARN", f"Expected WARN action for unusual amount to trusted recipient, got {d_warn['action']}"
+        assert d_warn["tier"] == "MEDIUM"
+        warn_txn_id = d_warn["transactionId"]
+        print(f" [PASS] Unusual ₹18k to Trusted Contact: Score={d_warn['totalScore']}/100 -> {d_warn['action']} ({d_warn['tier']}) - NOT an automatic hold")
+
+        # Test Cancel flow on warned transaction
+        cancel_resp = client.post(f"/api/transactions/{warn_txn_id}/cancel")
+        assert cancel_resp.status_code == 200
+        assert cancel_resp.json()["status"] == "CANCELLED"
+        print(f" [PASS] Customer CANCEL flow: Transaction {warn_txn_id} status={cancel_resp.json()['status']}")
+
+        # Test Continue flow on warned transaction
+        res_warn2 = client.post("/api/analyze-payment", json=unusual_warn_payload).json()
+        warn_txn_id2 = res_warn2["transactionId"]
+        confirm_warn_resp = client.post(f"/api/transactions/{warn_txn_id2}/confirm", json={"pinEntered": True})
+        assert confirm_warn_resp.status_code == 200
+        assert confirm_warn_resp.json()["status"] == "COMPLETED"
+        print(f" [PASS] Customer CONTINUE flow: Transaction {warn_txn_id2} successfully completed upon confirmation")
 
         # 3c. Scenario C: High/Critical-risk coercion payment (HOLD)
         high_risk_payload = {

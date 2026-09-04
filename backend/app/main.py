@@ -82,7 +82,7 @@ def health_check(db: Session = Depends(get_db)):
         db_status = f"unhealthy: {str(e)}"
 
     has_gemini = bool(settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY"))
-    ai_status = "active (Gemini 2.5 Flash)" if has_gemini else "fallback_active (Local Heuristic Engine)"
+    ai_status = "active (Gemini 3.6 Flash)" if has_gemini else "fallback_active (Local Heuristic Engine)"
 
     return {
         "status": "ok" if db_status == "connected" else "degraded",

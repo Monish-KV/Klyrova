@@ -44,6 +44,24 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
 
   if (!isOpen || !analysis || !paymentData || !currentCustomer) return null;
 
+  const handleCancelPayment = async () => {
+    setSubmitting(true);
+    try {
+      if (analysis.transactionId) {
+        await api.cancelTransaction(analysis.transactionId);
+      }
+      addToast('Transaction cancelled. Your funds remain safe in your account.', 'info');
+      await refreshData();
+      onClose();
+    } catch (err) {
+      console.error('Cancel failed:', err);
+      addToast('Transaction cancelled.', 'info');
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAnswerManipulation = async (answer: 'YES' | 'NO' | 'NOT_SURE') => {
     setSubmitting(true);
     try {
@@ -91,23 +109,18 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
     setSubmitting(true);
     try {
       if (analysis.transactionId) {
-        if (analysis.tier === 'CRITICAL' || analysis.tier === 'HIGH') {
-          addToast('Protective Hold Instituted: Transaction held by safety protocol.', 'warn');
-        } else {
-          await api.confirmTransaction(analysis.transactionId, { pinEntered: true });
-          addToast(`Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`, 'success');
+        if (analysis.action === 'HOLD' || analysis.tier === 'CRITICAL') {
+          addToast('Protective Hold Active: Payment held for safety and cannot be completed directly.', 'error');
+          return;
         }
+        await api.confirmTransaction(analysis.transactionId, { pinEntered: true });
+        addToast(`Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`, 'success');
       } else {
         await api.createTransaction({
           ...paymentData,
-          forceStatus: analysis.tier === 'CRITICAL' ? 'HELD' : 'COMPLETED',
+          forceStatus: 'COMPLETED',
         });
-        addToast(
-          analysis.tier === 'CRITICAL'
-            ? 'Protective Hold Instituted'
-            : `Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`,
-          analysis.tier === 'CRITICAL' ? 'warn' : 'success'
-        );
+        addToast(`Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`, 'success');
       }
       await refreshData();
       onPaymentSuccess();
@@ -121,36 +134,36 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
   };
 
   const getTierBadge = () => {
-    switch (analysis.tier) {
-      case 'CRITICAL':
-        return {
-          bg: 'bg-rose-100 text-rose-800 border-rose-300',
-          icon: ShieldAlert,
-          title: 'CRITICAL RISK DETECTED',
-          border: 'border-rose-300',
-        };
-      case 'HIGH':
-        return {
-          bg: 'bg-amber-100 text-amber-800 border-amber-300',
-          icon: AlertTriangle,
-          title: 'HIGH RISK DETECTED',
-          border: 'border-amber-300',
-        };
-      case 'MEDIUM':
-        return {
-          bg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-          icon: AlertTriangle,
-          title: 'MODERATE RISK DETECTED',
-          border: 'border-yellow-300',
-        };
-      default:
-        return {
-          bg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          icon: ShieldCheck,
-          title: 'LOW RISK (SAFE)',
-          border: 'border-emerald-300',
-        };
+    if (analysis.action === 'HOLD' || analysis.tier === 'CRITICAL') {
+      return {
+        bg: 'bg-rose-100 text-rose-800 border-rose-300',
+        icon: ShieldAlert,
+        title: 'CRITICAL RISK — PROTECTIVE HOLD ACTIVE',
+        border: 'border-rose-300',
+      };
     }
+    if (analysis.action === 'VERIFY' || analysis.tier === 'HIGH') {
+      return {
+        bg: 'bg-amber-100 text-amber-800 border-amber-300',
+        icon: AlertTriangle,
+        title: 'HIGH RISK — VERIFICATION REQUIRED',
+        border: 'border-amber-300',
+      };
+    }
+    if (analysis.action === 'WARN' || analysis.tier === 'MEDIUM') {
+      return {
+        bg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+        icon: AlertTriangle,
+        title: 'UNUSUAL PAYMENT WARNING',
+        border: 'border-yellow-300',
+      };
+    }
+    return {
+      bg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      icon: ShieldCheck,
+      title: 'LOW RISK (SAFE ROUTINE PAYMENT)',
+      border: 'border-emerald-300',
+    };
   };
 
   const badge = getTierBadge();
@@ -338,8 +351,62 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* THE CRITICAL MANIPULATION CHECK INTERVENTION */}
-            {analysis.tier === 'CRITICAL' || analysis.tier === 'HIGH' ? (
+            {/* 1. CRITICAL RISK / PROTECTIVE HOLD ACTION */}
+            {analysis.action === 'HOLD' || analysis.tier === 'CRITICAL' ? (
+              <div className="p-6 bg-rose-50/90 border-t border-rose-200 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800">
+                      GUARDIANPAY PROTECTIVE HOLD
+                    </span>
+                    <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
+                      Payment Paused for Your Safety
+                    </h4>
+                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
+                      For your protection, this payment of <strong>₹{paymentData.amount.toLocaleString('en-IN')}</strong> has been held.
+                      <strong> Your money has NOT left your bank account.</strong>
+                    </p>
+                    <p className="text-xs text-rose-800 font-medium mt-1">
+                      Multiple strong fraud or coercion signals were detected. This hold cannot be bypassed simply by entering a PIN.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-xl"
+                  >
+                    Close
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="tel:1930"
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                      <PhoneCall className="w-4 h-4 text-emerald-400" />
+                      <span>Call 1930 Helpline</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomerTab('safety');
+                        onClose();
+                      }}
+                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>Review in Safety Center</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : analysis.action === 'VERIFY' || analysis.tier === 'HIGH' ? (
+              /* 2. HIGH RISK / VERIFICATION REQUIRED ACTION */
               <div className="p-6 bg-amber-50/90 border-t border-amber-200 space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
@@ -347,7 +414,7 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                      GUARDIANPAY SIGNATURE INTERVENTION
+                      GUARDIANPAY COERCION INTERVENTION
                     </span>
                     <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
                       "Did someone ask you to make this payment urgently?"
@@ -390,14 +457,70 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
                     <span>NO, this is voluntary</span>
                   </button>
                 </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleCancelPayment}
+                    className="text-xs text-slate-500 hover:text-slate-800 underline font-medium cursor-pointer"
+                  >
+                    Cancel Transaction
+                  </button>
+                </div>
+              </div>
+            ) : analysis.action === 'WARN' || analysis.tier === 'MEDIUM' ? (
+              /* 3. MEDIUM RISK / UNUSUAL AMOUNT WARNING ACTION */
+              <div className="p-6 bg-yellow-50/90 border-t border-yellow-200 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-800">
+                      CONSCIOUS CONFIRMATION REQUIRED
+                    </span>
+                    <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
+                      This payment is higher than your usual amount
+                    </h4>
+                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
+                      You normally send around <strong>₹{currentCustomer.habitualMaxAmount.toLocaleString('en-IN')}</strong>,
+                      but this payment is <strong>₹{paymentData.amount.toLocaleString('en-IN')}</strong>.
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Do you want to continue?
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 pt-2">
+                  <button
+                    id="cancel_warned_payment_btn"
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleCancelPayment}
+                    className="px-5 py-2.5 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel Payment
+                  </button>
+                  <button
+                    id="confirm_warned_payment_btn"
+                    disabled={submitting}
+                    onClick={handleDirectConfirm}
+                    className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Continue & Transfer ₹{paymentData.amount.toLocaleString('en-IN')}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ) : (
-              /* Low / Moderate Risk confirmation */
+              /* 4. LOW RISK / ALLOW ACTION */
               <div className="p-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -405,7 +528,7 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
                   id="confirm_safe_payment_btn"
                   disabled={submitting}
                   onClick={handleDirectConfirm}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <span>Authorize & Transfer ₹{paymentData.amount.toLocaleString('en-IN')}</span>
                   <ArrowRight className="w-4 h-4" />

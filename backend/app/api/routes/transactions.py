@@ -12,6 +12,7 @@ from backend.app.database.schemas import (
 from backend.app.services.transaction_service import (
     analyze_and_record_payment,
     confirm_transaction,
+    cancel_transaction,
     get_all_transactions,
     get_transaction_by_id,
     resolve_transaction,
@@ -93,6 +94,21 @@ def confirm_transaction_endpoint(
     data = payload.model_dump(exclude_unset=True)
     try:
         return confirm_transaction(db, transaction_id, data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/transactions/{transaction_id}/cancel")
+def cancel_transaction_endpoint(
+    transaction_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Cancels a warned or pending transaction when customer declines to proceed.
+    """
+    try:
+        return cancel_transaction(db, transaction_id)
     except HTTPException:
         raise
     except Exception as e:

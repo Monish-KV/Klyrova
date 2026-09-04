@@ -190,13 +190,18 @@ Analyze the message strictly and return ONLY a valid JSON object with the follow
 }}
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
-        )
+        import asyncio
+
+        def _call_gemini():
+            return client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                ),
+            )
+
+        response = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=10.0)
 
         response_text = response.text or ""
         # Clean up JSON markdown fences if present

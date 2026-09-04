@@ -87,11 +87,11 @@ def evaluate_transaction_risk(
 
     # 3. Unfamiliar / Unverified Beneficiary
     if not is_known_recipient:
-        score += 25
+        score += 20
         signals.append(
             RiskSignal(
                 f"Unfamiliar/unverified recipient ({recipient_upi}) not found in trusted contact directory",
-                25,
+                20,
             )
         )
 
@@ -171,8 +171,8 @@ def evaluate_transaction_risk(
     )
 
     if protection_norm in ("ENHANCED", "STRONG") or is_senior_or_beginner:
-        # Vulnerable customer protection sensitivity multiplier
-        if not is_known_recipient or amount >= 10000 or has_urgent_keyword or is_device_unfamiliar:
+        # Heightened safety sensitivity for senior/digitally inexperienced account when risk signals are present
+        if (not is_known_recipient) or has_urgent_keyword or is_device_unfamiliar:
             score += 15
             signals.append(
                 RiskSignal(
@@ -208,21 +208,21 @@ def evaluate_transaction_risk(
     score = min(100, max(0, score))
 
     # Determine Risk Level, Decision, and Status
-    # Actions: LOW -> ALLOW, WARN -> WARN, MEDIUM -> VERIFY, HIGH/CRITICAL -> HOLD
-    if score >= 80:
+    # Actions:
+    # LOW (<25)       -> ALLOW
+    # MEDIUM (25-49)  -> WARN (Explain why unusual, ask for conscious confirmation)
+    # HIGH (50-74)    -> VERIFY (Explain risk factors, require stronger verification)
+    # CRITICAL (>=75) -> HOLD (Protective Hold, cannot be bypassed with simple PIN)
+    if score >= 75:
         risk_level = "CRITICAL"
         recommended_action = "HOLD"
         status = "HELD"
-    elif score >= 65:
+    elif score >= 50:
         risk_level = "HIGH"
-        recommended_action = "HOLD"
-        status = "HELD"
-    elif score >= 40:
-        risk_level = "VERIFY"
         recommended_action = "VERIFY"
         status = "VERIFICATION REQUIRED"
-    elif score >= 20:
-        risk_level = "WARN"
+    elif score >= 25:
+        risk_level = "MEDIUM"
         recommended_action = "WARN"
         status = "WARNED"
     else:

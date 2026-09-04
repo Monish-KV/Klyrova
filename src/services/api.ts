@@ -174,6 +174,18 @@ export const api = {
     return res.json();
   },
 
+  async cancelTransaction(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/transactions/${id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to cancel transaction');
+    }
+    return res.json();
+  },
+
   async createTransaction(payload: TelemetryPayload & {
     forceStatus?: string;
     holdReason?: string;
