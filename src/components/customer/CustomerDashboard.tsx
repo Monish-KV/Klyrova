@@ -205,7 +205,7 @@ export const CustomerDashboard: React.FC = () => {
                       <h4 className="text-xs font-bold text-slate-900">{txn.recipientName}</h4>
                       <p className="text-[11px] text-slate-500 font-mono">{txn.recipientUpi}</p>
                       <span className="text-[10px] text-slate-400">
-                        {new Date(txn.timestamp).toLocaleDateString('en-IN', {
+                        {new Date(txn.timestamp || txn.created_at || Date.now()).toLocaleDateString('en-IN', {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',

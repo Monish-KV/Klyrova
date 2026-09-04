@@ -101,7 +101,7 @@ export const TransactionsView: React.FC = () => {
                       <span>Txn ID: {txn.id}</span>
                       <span>•</span>
                       <span>
-                        {new Date(txn.timestamp).toLocaleDateString('en-IN', {
+                        {new Date(txn.timestamp || txn.created_at || Date.now()).toLocaleDateString('en-IN', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
@@ -112,7 +112,7 @@ export const TransactionsView: React.FC = () => {
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-                        {txn.telemetry.device}
+                        {txn.telemetry?.device || txn.device || 'Android Device'}
                       </span>
                     </div>
                   </div>
@@ -135,19 +135,24 @@ export const TransactionsView: React.FC = () => {
                       {txn.status === 'HELD' ? 'HOLD & VERIFY (PAUSED)' : txn.status}
                     </span>
 
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
-                        txn.riskScore >= 80
-                          ? 'bg-rose-100 text-rose-800'
-                          : txn.riskScore >= 60
-                          ? 'bg-amber-100 text-amber-800'
-                          : txn.riskScore >= 30
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      Risk: {txn.riskScore}/100
-                    </span>
+                    {(() => {
+                      const score = txn.riskScore ?? txn.risk_score ?? 0;
+                      return (
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
+                            score >= 80
+                              ? 'bg-rose-100 text-rose-800'
+                              : score >= 60
+                              ? 'bg-amber-100 text-amber-800'
+                              : score >= 30
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          Risk: {score}/100
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

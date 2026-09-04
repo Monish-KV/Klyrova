@@ -190,7 +190,7 @@ export const BankDashboard: React.FC = () => {
                     className="hover:bg-slate-50 transition-colors cursor-pointer group"
                   >
                     <td className="px-5 py-4 whitespace-nowrap text-slate-500 font-mono text-[11px]">
-                      {new Date(txn.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(txn.timestamp || txn.created_at || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </td>
 
                     <td className="px-5 py-4 whitespace-nowrap">
@@ -208,19 +208,24 @@ export const BankDashboard: React.FC = () => {
                     </td>
 
                     <td className="px-5 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-md font-mono font-bold text-xs ${
-                          txn.riskScore >= 80
-                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                            : txn.riskScore >= 60
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : txn.riskScore >= 30
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                        }`}
-                      >
-                        {txn.riskScore} / 100
-                      </span>
+                      {(() => {
+                        const score = txn.riskScore ?? txn.risk_score ?? 0;
+                        return (
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-md font-mono font-bold text-xs ${
+                              score >= 80
+                                ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                : score >= 60
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : score >= 30
+                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
+                            {score} / 100
+                          </span>
+                        );
+                      })()}
                     </td>
 
                     <td className="px-5 py-4 whitespace-nowrap">

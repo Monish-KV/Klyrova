@@ -63,10 +63,17 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
         );
       } else {
         // Answer is NO - Voluntary payment confirmed
-        const res = await api.createTransaction({
-          ...paymentData,
-          forceStatus: 'COMPLETED',
-        });
+        if (analysis.transactionId) {
+          await api.confirmTransaction(analysis.transactionId, {
+            pinEntered: true,
+            verifiedLegitimate: true,
+          });
+        } else {
+          await api.createTransaction({
+            ...paymentData,
+            forceStatus: 'COMPLETED',
+          });
+        }
         addToast(`Payment of ₹${paymentData.amount.toLocaleString('en-IN')} completed successfully.`, 'success');
         await refreshData();
         onPaymentSuccess();
@@ -83,17 +90,26 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
   const handleDirectConfirm = async () => {
     setSubmitting(true);
     try {
-      await api.createTransaction({
-        ...paymentData,
-        forceStatus: analysis.tier === 'CRITICAL' ? 'HELD' : 'COMPLETED',
-      });
+      if (analysis.transactionId) {
+        if (analysis.tier === 'CRITICAL' || analysis.tier === 'HIGH') {
+          addToast('Protective Hold Instituted: Transaction held by safety protocol.', 'warn');
+        } else {
+          await api.confirmTransaction(analysis.transactionId, { pinEntered: true });
+          addToast(`Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`, 'success');
+        }
+      } else {
+        await api.createTransaction({
+          ...paymentData,
+          forceStatus: analysis.tier === 'CRITICAL' ? 'HELD' : 'COMPLETED',
+        });
+        addToast(
+          analysis.tier === 'CRITICAL'
+            ? 'Protective Hold Instituted'
+            : `Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`,
+          analysis.tier === 'CRITICAL' ? 'warn' : 'success'
+        );
+      }
       await refreshData();
-      addToast(
-        analysis.tier === 'CRITICAL'
-          ? 'Protective Hold Instituted'
-          : `Payment of ₹${paymentData.amount.toLocaleString('en-IN')} sent successfully`,
-        analysis.tier === 'CRITICAL' ? 'warn' : 'success'
-      );
       onPaymentSuccess();
       onClose();
     } catch (err) {
