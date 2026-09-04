@@ -3,7 +3,20 @@ import fs from 'fs';
 import path from 'path';
 
 let dbInstance: Database | null = null;
-const DB_FILE = process.env.DATABASE_URL || path.join(process.cwd(), 'guardianpay.sqlite');
+function getDatabaseFilePath(): string {
+  let envUrl = process.env.SQLITE_DB_PATH || process.env.DATABASE_URL;
+  if (!envUrl) {
+    return path.join(process.cwd(), 'guardianpay.sqlite');
+  }
+  if (envUrl.startsWith('sqlite:///')) {
+    envUrl = envUrl.replace('sqlite:///', '');
+  } else if (envUrl.startsWith('sqlite://')) {
+    envUrl = envUrl.replace('sqlite://', '');
+  }
+  return path.isAbsolute(envUrl) ? envUrl : path.join(process.cwd(), envUrl);
+}
+
+const DB_FILE = getDatabaseFilePath();
 
 export async function getDb(): Promise<Database> {
   if (dbInstance) {

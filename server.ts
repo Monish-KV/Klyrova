@@ -61,7 +61,12 @@ app.post('/api/analyze-message', async (req, res) => {
     const { messageText, customerId, userId, message } = req.body;
     const text = messageText || message;
     const user = customerId || userId;
-    const result = await analyzeScamMessage(user, text);
+
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      return res.status(400).json({ error: 'Please enter or paste message text to analyze. Empty messages cannot be evaluated.' });
+    }
+
+    const result = await analyzeScamMessage(user, text.trim());
     return res.json(result);
   } catch (err: any) {
     console.error('[API /api/analyze-message Error]:', err);

@@ -254,7 +254,7 @@ export async function analyzePayment(telemetry: any) {
     explanation = `Critical risk signals detected (${analysis.riskScore}/100). Protective hold instituted to prevent unauthorized drain. Funds remain safely in your account.`;
   } else if (analysis.riskLevel === 'HIGH' || analysis.recommendedAction === 'VERIFY') {
     explanation = `Elevated risk score of ${analysis.riskScore}/100 detected. Multiple factors require conscious verification before proceeding.`;
-  } else if (analysis.riskLevel === 'WARN') {
+  } else if (analysis.riskLevel === 'WARN' || analysis.riskLevel === 'MEDIUM') {
     explanation = `This payment is higher than your usual amount. You normally send around ₹${habitualMax.toLocaleString('en-IN')}, but this payment is ₹${amount.toLocaleString('en-IN')}. Do you want to continue?`;
   } else {
     explanation = `Transaction meets baseline safety requirements with low risk score of ${analysis.riskScore}/100.`;
@@ -383,13 +383,13 @@ export async function confirmTransaction(id: string, confirmationPayload?: { pin
   }
 
   // IMPORTANT: Enforce backend authority!
-  // A transaction marked HELD cannot simply become ALLOWED because the frontend sent confirm.
-  if (txn.status === 'HELD') {
-    if (!confirmationPayload?.verifiedLegitimate) {
+  // A transaction marked HELD or CRITICAL cannot simply become ALLOWED because the frontend sent confirm.
+  if (txn.status === 'HELD' || txn.risk_level === 'CRITICAL') {
+    if (txn.risk_level === 'CRITICAL' || !confirmationPayload?.verifiedLegitimate) {
       return {
         success: false,
         status: 'HELD',
-        message: 'Transaction remains safely HELD by GuardianPay protective protocol. Bank review or family confirmation required.',
+        message: 'Transaction remains safely HELD by GuardianPay protective protocol. Critical risk holds cannot be bypassed with a normal PIN confirmation.',
         transaction: txn,
       };
     }

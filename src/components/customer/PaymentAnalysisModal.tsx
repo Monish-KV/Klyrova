@@ -150,7 +150,7 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
         border: 'border-amber-300',
       };
     }
-    if (analysis.action === 'WARN' || analysis.tier === 'MEDIUM') {
+    if (analysis.action === 'WARN' || analysis.tier === 'MEDIUM' || analysis.tier === 'WARN') {
       return {
         bg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
         icon: AlertTriangle,
@@ -469,7 +469,7 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
                   </button>
                 </div>
               </div>
-            ) : analysis.action === 'WARN' || analysis.tier === 'MEDIUM' ? (
+            ) : analysis.action === 'WARN' || analysis.tier === 'MEDIUM' || analysis.tier === 'WARN' ? (
               /* 3. MEDIUM RISK / UNUSUAL AMOUNT WARNING ACTION */
               <div className="p-6 bg-yellow-50/90 border-t border-yellow-200 space-y-4">
                 <div className="flex items-start gap-3">

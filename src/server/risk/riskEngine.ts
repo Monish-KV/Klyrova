@@ -27,7 +27,7 @@ export interface RiskEvaluationInput {
 
 export interface RiskEvaluationOutput {
   riskScore: number;
-  riskLevel: 'LOW' | 'WARN' | 'VERIFY' | 'HIGH' | 'CRITICAL';
+  riskLevel: 'LOW' | 'WARN' | 'MEDIUM' | 'VERIFY' | 'HIGH' | 'CRITICAL';
   recommendedAction: 'ALLOW' | 'WARN' | 'VERIFY' | 'HOLD';
   status: 'ALLOWED' | 'WARNED' | 'VERIFICATION REQUIRED' | 'HELD';
   signals: RiskSignal[];
@@ -205,7 +205,7 @@ export function evaluateTransactionRisk(input: RiskEvaluationInput): RiskEvaluat
   score = Math.min(100, Math.max(0, score));
 
   // Determine Risk Level, Decision, and Status
-  let riskLevel: 'LOW' | 'WARN' | 'VERIFY' | 'HIGH' | 'CRITICAL';
+  let riskLevel: 'LOW' | 'WARN' | 'MEDIUM' | 'VERIFY' | 'HIGH' | 'CRITICAL';
   let recommendedAction: 'ALLOW' | 'WARN' | 'VERIFY' | 'HOLD';
   let status: 'ALLOWED' | 'WARNED' | 'VERIFICATION REQUIRED' | 'HELD';
 
@@ -213,16 +213,12 @@ export function evaluateTransactionRisk(input: RiskEvaluationInput): RiskEvaluat
     riskLevel = 'CRITICAL';
     recommendedAction = 'HOLD';
     status = 'HELD';
-  } else if (score >= 75) {
+  } else if (score >= 60) {
     riskLevel = 'HIGH';
-    recommendedAction = 'HOLD';
-    status = 'HELD';
-  } else if (score >= 45) {
-    riskLevel = 'VERIFY';
     recommendedAction = 'VERIFY';
     status = 'VERIFICATION REQUIRED';
   } else if (score >= 25) {
-    riskLevel = 'WARN';
+    riskLevel = 'MEDIUM';
     recommendedAction = 'WARN';
     status = 'WARNED';
   } else {
