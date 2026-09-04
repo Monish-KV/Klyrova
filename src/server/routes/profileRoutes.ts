@@ -9,7 +9,17 @@ import { query } from '../database/db';
 
 const router = Router();
 
-// GET /api/users (for demo profile switcher)
+// GET /api/customers & GET /api/users (for demo profile switcher & customer list)
+router.get('/customers', async (req, res) => {
+  try {
+    const users = await getAllUsers();
+    return res.json(users);
+  } catch (err: any) {
+    console.error('[API GET /api/customers Error]:', err);
+    return res.status(500).json({ error: err.message || 'Failed to fetch customers.' });
+  }
+});
+
 router.get('/users', async (req, res) => {
   try {
     const users = await getAllUsers();

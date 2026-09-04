@@ -121,8 +121,57 @@ export async function updateSafetySettings(
   return getSafetySettings(user.id);
 }
 
+export function mapUserToCustomer(user: any) {
+  const isSenior = (user.user_type || '').includes('Senior') || (user.name || '').includes('Ravi');
+  const age = isSenior ? 68 : (user.id === 'usr_sunita_patel' ? 52 : 34);
+  const avatar =
+    user.id === 'usr_ravi_kumar'
+      ? 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80'
+      : user.id === 'usr_sunita_patel'
+      ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80';
+
+  return {
+    id: user.id,
+    customerId: user.customer_id,
+    customer_id: user.customer_id,
+    name: user.name,
+    email: user.email,
+    age,
+    persona: user.user_type,
+    avatar,
+    phone: user.phone,
+    accountNumber: user.account_number,
+    account_number: user.account_number,
+    upiId: user.upi_id,
+    upi_id: user.upi_id,
+    balance: user.balance,
+    habitualMaxAmount: user.habitual_max_amount,
+    habitual_max_amount: user.habitual_max_amount,
+    safetyStatus: 'PROTECTED',
+    activeHours: { start: 7, end: 21 },
+    registeredDevice: user.registered_device,
+    registered_device: user.registered_device,
+    registeredIp: user.registered_ip,
+    registered_ip: user.registered_ip,
+    hasRecentScamLink: false,
+    userType: user.user_type,
+    user_type: user.user_type,
+    digitalExperience: user.digital_experience,
+    digital_experience: user.digital_experience,
+    protectionLevel: user.protection_level,
+    protection_level: user.protection_level,
+  };
+}
+
 export async function getAllUsers() {
-  return query(`SELECT * FROM users ORDER BY created_at ASC`);
+  const users = await query(`SELECT * FROM users ORDER BY created_at ASC`);
+  return users.map(mapUserToCustomer);
+}
+
+export async function getAllCustomers() {
+  const users = await query(`SELECT * FROM users ORDER BY created_at ASC`);
+  return users.map(mapUserToCustomer);
 }
 
 export async function addBeneficiary(

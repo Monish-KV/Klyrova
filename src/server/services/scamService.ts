@@ -63,15 +63,41 @@ export async function analyzeScamMessage(userId?: string, message?: string) {
     );
   }
 
+  const lower = message.toLowerCase();
+  const hasUrgencyTactics = /urgent|immediately|asap|today|tonight|blocked|freeze|disconnect|expire|hour/i.test(lower);
+  const hasSuspiciousLinks = /https?:\/\/|www\.|\.apk|\.xyz|\.top|bit\.ly/i.test(lower);
+  const hasImpersonation = /sbi|hdfc|icici|axis|bank|officer|police|customs|bescom|electricity|yono/i.test(lower);
+  const requestsRemoteAccess = /anydesk|teamviewer|quicksupport|screen share|remote/i.test(lower);
+  const requestsCredentialsOrOtp = /otp|pin|password|pan card|aadhaar|cvv|kyc|credential/i.test(lower);
+
   return {
     id,
     score: result.score,
+    riskScore: result.score,
     riskLevel: result.riskLevel,
     categories: result.categories,
     reasons: result.reasons,
+    warningSigns: result.reasons,
     recommendedAction: result.recommendedAction,
+    actionAdvice: [
+      result.recommendedAction,
+      'Never install third-party APKs or share one-time PINs/passwords.',
+      'Report suspected cybercrime to 1930 or cybercrime.gov.in.',
+    ],
     source: result.source,
+    rawText: message,
+    timestamp: now,
     createdAt: now,
+    created_at: now,
+    scamType: result.categories[0] || 'Phishing / Social Engineering',
+    summary: result.reasons[0] || 'Automated message risk scan completed.',
+    threatIndicators: {
+      hasUrgencyTactics,
+      hasSuspiciousLinks,
+      hasImpersonation,
+      requestsRemoteAccess,
+      requestsCredentialsOrOtp,
+    },
   };
 }
 

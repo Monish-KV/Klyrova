@@ -394,7 +394,7 @@ export const PaymentAnalysisModal: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        setCustomerTab('safety');
+                        setCustomerTab('safety-center');
                         onClose();
                       }}
                       className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"

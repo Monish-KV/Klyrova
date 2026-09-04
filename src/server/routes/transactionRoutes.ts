@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import {
   analyzeTransaction,
+  analyzePayment,
   confirmTransaction,
+  cancelTransaction,
   getTransactions,
   getTransactionById,
   resolveTransactionAlert,
+  submitIntervention,
 } from '../services/transactionService';
 
 const router = Router();
@@ -14,30 +17,35 @@ router.post('/analyze', async (req, res) => {
   try {
     const {
       userId,
+      customerId,
       recipient,
+      recipientName,
       recipientUpi,
       amount,
       purpose,
+      note,
       device,
+      deviceFingerprint,
       location,
       isKnownDevice,
       transactionHour,
       completionTimeSeconds,
     } = req.body;
 
-    if (!userId || !recipientUpi || amount === undefined || Number(amount) <= 0) {
+    const targetUser = userId || customerId;
+    if (!targetUser || !recipientUpi || amount === undefined || Number(amount) <= 0) {
       return res.status(400).json({
-        error: 'userId, recipientUpi, and positive amount are required.',
+        error: 'userId or customerId, recipientUpi, and positive amount are required.',
       });
     }
 
     const result = await analyzeTransaction({
-      userId,
-      recipient: recipient || recipientUpi,
+      userId: targetUser,
+      recipient: recipient || recipientName || recipientUpi,
       recipientUpi,
       amount: Number(amount),
-      purpose,
-      device,
+      purpose: purpose || note || '',
+      device: device || deviceFingerprint || 'Web Client',
       location,
       isKnownDevice,
       transactionHour,
@@ -64,10 +72,22 @@ router.post('/:id/confirm', async (req, res) => {
   }
 });
 
+// POST /api/transactions/:id/cancel
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await cancelTransaction(id);
+    return res.json(result);
+  } catch (err: any) {
+    console.error(`[API /api/transactions/${req.params.id}/cancel Error]:`, err);
+    return res.status(500).json({ error: err.message || 'Cancellation failed.' });
+  }
+});
+
 // GET /api/transactions
 router.get('/', async (req, res) => {
   try {
-    const userId = req.query.userId as string | undefined;
+    const userId = (req.query.userId || req.query.customerId) as string | undefined;
     const limit = req.query.limit ? Number(req.query.limit) : 50;
     const offset = req.query.offset ? Number(req.query.offset) : 0;
     const transactions = await getTransactions(userId, limit, offset);
@@ -87,7 +107,7 @@ router.get('/:id', async (req, res) => {
     }
     return res.json(transaction);
   } catch (err: any) {
-    console.error(`[API GET /api/transactions/${req.params.id} Error]:`, err);
+    console.error(`[API GET /api/transactions/${req.params.id}/Error]:`, err);
     return res.status(500).json({ error: err.message || 'Failed to fetch transaction details.' });
   }
 });
