@@ -1,0 +1,8 @@
+{
+  "name": "GuardianPay AI",
+  "description": "A digital-banking financial safety layer protecting vulnerable customers and seniors from digital fraud, coercive transfers, and social engineering scams with explainable risk scoring and manipulation intervention checks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
